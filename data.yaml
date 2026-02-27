@@ -1,0 +1,5 @@
+path: /path/to/dataset
+train: images/train
+val: images/val
+nc: 10
+names: [Disconnection, Misalignment, Corrosion, Obstruction, Penetration, Scaling, Sedimentation, Spalling, WellChamber, Other]

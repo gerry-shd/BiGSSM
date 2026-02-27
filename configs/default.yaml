@@ -1,0 +1,83 @@
+﻿# Core
+seed: 42
+img: 640
+batch: 8
+epochs: 200
+workers: 4
+width: 1.0
+use_mamba: true
+reg_max: 16
+
+# Model/Pretrain
+# backbone options: resnet50 | yolo11 | efficientnet_b0 | shufflenet_v2_x1_0 | ...
+backbone: yolo11
+# true: load default pretrained weights for selected backbone when available
+# false: train backbone from scratch
+pretrained: true
+# path to checkpoint for resume/warm-start; set null to disable
+weights: null
+# required when backbone=yolo11, e.g. /abs/path/yolo11n.pt
+yolo_weights: datasets/yolo11n.pt
+
+# Optim
+lr0: 0.005
+lrf: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 5
+
+# Loss
+box_weight: 7.5
+cls_weight: 0.5
+obj_weight: 1.0
+dfl_weight: 1.5
+use_dfl: true
+use_ciou: true
+cls_loss: dynfocus  # dynfocus | varifocal | focal
+obj_loss: bce       # bce | qfl
+
+# DynFocus
+dynfocus_eta: 2.0
+dynfocus_alpha: 1.0
+
+# Varifocal/Focal/QFL
+varifocal_alpha: 0.75
+varifocal_gamma: 2.0
+focal_alpha: 0.25
+focal_gamma: 2.0
+qfl_beta: 2.0
+
+# Assigner
+assigner: taskaligned  # taskaligned | simota
+taskaligned_topk: 13
+taskaligned_alpha: 1.0
+taskaligned_beta: 4.0
+assigner_use_obj: true
+simota_candidate_topk: 10
+simota_iou_weight: 3.0
+simota_topk: 10
+
+# Training tricks
+use_ema: true
+ema_decay: 0.9999
+use_amp: true
+multi_scale: true
+ms_range: [0.5, 1.5]
+grad_clip: 10.0
+accumulate: 1
+
+# Augment
+mosaic: 0.5
+mixup: 0.1
+copy_paste: 0.0
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+fliplr: 0.3
+
+# Eval
+conf_thres: 0.1
+iou_thres: 0.65
+profile_eval: false
+# validate every N epochs (1 means every epoch)
+val_interval: 10
