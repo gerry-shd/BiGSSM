@@ -1,21 +1,21 @@
-﻿# BiGSSM YOLOv11 Engineering
+# BiGSSM YOLOv11 Engineering
 
-工程目标：以 YOLOv11 预训练为默认起点，融合 BiGSSM 模块，提供可复现训练、评估、推理与部署（ONNX/TorchScript）。
+Project goal: use YOLOv11 pretrained weights as the default starting point, integrate the BiGSSM module, and provide reproducible training, evaluation, inference, and deployment (ONNX/TorchScript).
 
-## 目录与入口脚本
+## Directory and Entry Scripts
 
-根目录的 `train.py` / `val.py` / `predict.py` / `export_onnx.py` 即为实际逻辑脚本。
+The actual logic scripts are at the repository root: `train.py` / `val.py` / `predict.py` / `export_onnx.py`.
 
-## 安装
+## Installation
 
-使用 `uv`：
+Using `uv`:
 
 ```bash
 uv venv
 uv pip install -r requirements.txt
 ```
 
-或使用 `pip`：
+Or using `pip`:
 
 ```bash
 python -m venv .venv
@@ -23,15 +23,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-可选依赖（自动降级）：
+Optional dependencies (graceful fallback if unavailable):
 
-- `timm`（更多骨干）
-- `ultralytics`（YOLOv11 权重加载）
-- `mamba-ssm`（BiSS 模块加速）
-- `torchmetrics` / `pycocotools`（更完整 COCO 评估）
-- `thop`（GFLOPs 统计）
+- `timm` (more backbone options)
+- `ultralytics` (YOLOv11 weight loading)
+- `mamba-ssm` (BiSS module acceleration)
+- `torchmetrics` / `pycocotools` (more complete COCO evaluation)
+- `thop` (GFLOPs statistics)
 
-## 数据格式（YOLO）
+## Data Format (YOLO)
 
 ```yaml
 # data.yaml
@@ -43,109 +43,109 @@ nc: 3
 names: ["cls0", "cls1", "cls2"]
 ```
 
-标签文件：`labels/*/*.txt`，每行 `class cx cy w h`，归一化。
+Label files: `labels/*/*.txt`, one line per object in `class cx cy w h` normalized format.
 
-## 训练 / 验证 / 部署总流程
+## End-to-End Training / Validation / Deployment Flow
 
-1. 训练：`train.py`
-2. 验证：`val.py`
-3. 部署导出：`export_onnx.py`（可选 TorchScript）
-4. 推理：`predict.py` 或部署端（ONNX/TorchScript）
+1. Train: `train.py`
+2. Validate: `val.py`
+3. Export for deployment: `export_onnx.py` (optional TorchScript)
+4. Inference: `predict.py` or deployment-side runtime (ONNX/TorchScript)
 
-## 接口脚本说明（含详细示例）
+## Script Interface Details (with examples)
 
 **train.py**
-用途：训练 BiGSSM YOLOv11 检测器。
-主要参数：
-`--data` 数据集配置 `data.yaml`
-`--cfg` 模型与训练配置 `configs/default.yaml`
-`--project` 输出目录，默认 `runs/exp`
-`--device` 设备，`0`/`1` 或 `cpu`
-`--backbone` `resnet50` 或 `yolo11`
-`--weights` 从指定权重继续训练
-`--yolo_weights` YOLOv11 预训练权重路径
-`--no_pretrained` 禁用预训练
-`--no_mamba` 禁用 Mamba
-`--opts` 覆盖配置，例如 `batch=8 img=768`
+Purpose: train a BiGSSM YOLOv11 detector.
+Main arguments:
+`--data` dataset config `data.yaml`
+`--cfg` model/training config `configs/default.yaml`
+`--project` output directory, default `runs/exp`
+`--device` device, `0`/`1` or `cpu`
+`--backbone` `resnet50` or `yolo11`
+`--weights` resume training from specified weights
+`--yolo_weights` path to YOLOv11 pretrained weights
+`--no_pretrained` disable pretrained initialization
+`--no_mamba` disable Mamba
+`--opts` override config values, e.g. `batch=8 img=768`
 
-示例：
+Examples:
 
 ```bash
-# 基本训练
+# Basic training
 python train.py --data data.yaml --cfg configs/default.yaml --project runs/exp --device 0
 
-# 使用 YOLOv11 预训练权重
+# Use YOLOv11 pretrained weights
 python train.py --data data.yaml --cfg configs/default.yaml --yolo_weights yolo11n.pt --backbone yolo11
 
-# 覆盖配置（batch/img/assigner 等）
+# Override config (batch/img/assigner, etc.)
 python train.py --data data.yaml --opts batch=8 img=768 assigner=simota
 ```
 
 **val.py**
-用途：评估训练好的模型，输出 mAP 等指标。
-主要参数：
-`--data` 数据集配置
-`--cfg` 配置文件
-`--weights` 权重文件，如 `runs/exp/weights/best.pt`
-`--device` 设备
-`--backbone` 主干网络
-`--yolo_weights` YOLOv11 权重（若主干为 YOLOv11）
-`--no_mamba` 禁用 Mamba
-`--opts` 覆盖配置
+Purpose: evaluate a trained model and report metrics such as mAP.
+Main arguments:
+`--data` dataset config
+`--cfg` config file
+`--weights` weight file, e.g. `runs/exp/weights/best.pt`
+`--device` device
+`--backbone` backbone network
+`--yolo_weights` YOLOv11 weights (when YOLOv11 backbone is used)
+`--no_mamba` disable Mamba
+`--opts` override config values
 
-示例：
+Examples:
 
 ```bash
 python val.py --data data.yaml --cfg configs/default.yaml --weights runs/exp/weights/best.pt --device 0
 
-# 覆盖配置（例如更大分辨率）
+# Override config (e.g., larger resolution)
 python val.py --data data.yaml --weights runs/exp/weights/best.pt --opts img=768 batch=8
 ```
 
 **predict.py**
-用途：单张或批量推理，保存可视化结果，并可选输出 JSON。
-主要参数：
-`--data` 数据集配置
-`--cfg` 配置文件
-`--weights` 权重文件
-`--source` 输入图片或目录
-`--save_dir` 输出目录
-`--save_json` 可选 JSON 输出路径
-`--conf` 置信度阈值
-`--iou` NMS IOU 阈值
-`--max_det` 每图最大检测数
+Purpose: run single-image or batch inference, save visualized results, and optionally output JSON.
+Main arguments:
+`--data` dataset config
+`--cfg` config file
+`--weights` weight file
+`--source` input image or directory
+`--save_dir` output directory
+`--save_json` optional JSON output path
+`--conf` confidence threshold
+`--iou` NMS IoU threshold
+`--max_det` maximum detections per image
 
-示例：
+Examples:
 
 ```bash
 python predict.py --data data.yaml --cfg configs/default.yaml --weights runs/exp/weights/best.pt --source assets/images
 
-# 输出 JSON 结果
+# Output JSON results
 python predict.py --data data.yaml --cfg configs/default.yaml --weights runs/exp/weights/best.pt --source assets/images --save_json runs/predict.json
 ```
 
 **export_onnx.py**
-用途：导出 ONNX，可选导出 TorchScript。
-主要参数：
-`--data` 数据集配置
-`--cfg` 配置文件
-`--weights` 权重文件
-`--onnx` 导出 ONNX 路径
-`--torchscript` 可选 TorchScript 输出路径
+Purpose: export ONNX, with optional TorchScript export.
+Main arguments:
+`--data` dataset config
+`--cfg` config file
+`--weights` weight file
+`--onnx` ONNX export path
+`--torchscript` optional TorchScript output path
 
-示例：
+Examples:
 
 ```bash
-# 导出 ONNX
+# Export ONNX
 python export_onnx.py --data data.yaml --cfg configs/default.yaml --weights runs/exp/weights/best.pt --onnx model.onnx
 
-# 同时导出 TorchScript
+# Export ONNX and TorchScript together
 python export_onnx.py --data data.yaml --cfg configs/default.yaml --weights runs/exp/weights/best.pt --onnx model.onnx --torchscript model.ts
 ```
 
-## 部署与推理示例
+## Deployment and Inference Examples
 
-**ONNX Runtime 推理示例**（可选依赖 `onnxruntime`）：
+**ONNX Runtime inference example** (optional dependency: `onnxruntime`):
 
 ```python
 import cv2
@@ -164,7 +164,7 @@ outputs = sess.run(None, {"images": img})
 print([o.shape for o in outputs])
 ```
 
-**TorchScript 推理示例**：
+**TorchScript inference example**:
 
 ```python
 import torch
@@ -178,13 +178,13 @@ with torch.no_grad():
 print([t.shape for t in y])
 ```
 
-## 准确率与正确运行保障
+## Accuracy and Correctness Assurance
 
-以下措施用于保证算法正确运行，并稳定获得可复现的准确率：
+The following measures help ensure correct execution and stable, reproducible accuracy:
 
-- 数据一致性检查：`data.yaml` 中 `nc` 与 `names` 一致，`labels` 与 `images` 路径匹配，随机抽样可视化检查标注。
-- 训练正确性检查：小样本过拟合测试（例如 20 张图），确保 loss 能快速下降到合理范围。
-- 评估闭环：每次训练后用 `val.py` 评估 mAP50 / mAP50-95，并与基线模型对比。
-- 运行稳定性：固定随机种子、版本锁定（`requirements.txt`）、统一输入尺寸与前处理流程。
+- Data consistency checks: ensure `nc` matches `names` in `data.yaml`, verify `labels` and `images` paths match, and perform random visualization checks on annotations.
+- Training correctness check: run a small-set overfit test (e.g., 20 images) to confirm loss drops quickly to a reasonable range.
+- Evaluation loop closure: after each training run, evaluate with `val.py` for mAP50 / mAP50-95 and compare against a baseline model.
+- Runtime stability: fix random seeds, lock versions (`requirements.txt`), and keep input size and preprocessing pipeline consistent.
 
-准确率受数据规模、标注质量、训练配置影响较大；若需达到目标指标，应在固定数据集上记录基线 mAP 并逐步优化配置与数据质量。
+Accuracy is strongly influenced by dataset size, annotation quality, and training configuration. To reach target metrics, record baseline mAP on a fixed dataset and iteratively improve configuration and data quality.
