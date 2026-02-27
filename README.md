@@ -1,4 +1,4 @@
-# BiGSSM YOLOv11 Engineering
+# BiGSSM
 
 Project goal: use YOLOv11 pretrained weights as the default starting point, integrate the BiGSSM module, and provide reproducible training, evaluation, inference, and deployment (ONNX/TorchScript).
 
@@ -188,3 +188,4 @@ The following measures help ensure correct execution and stable, reproducible ac
 - Runtime stability: fix random seeds, lock versions (`requirements.txt`), and keep input size and preprocessing pipeline consistent.
 
 Accuracy is strongly influenced by dataset size, annotation quality, and training configuration. To reach target metrics, record baseline mAP on a fixed dataset and iteratively improve configuration and data quality.
+
